@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управління відправками робіт студентів</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .toggle-button {
+            padding: 5px 10px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .enabled {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .disabled {
+            background-color: #f44336;
+            color: white;
+        }
+        .filter-container {
+            margin-bottom: 1rem;
+        }
+        .filter-container input {
+            margin-right: 10px;
+            padding: 5px;
+        }
+        .filter-container button {
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+    </style>
+    <script>
+		async function toggleSubmission(student) {
+			try {
+				const token = localStorage.getItem('token');
+				if (!token) {
+					alert('Токен не знайдено. Будь ласка, увійдіть у систему.');
+					return;
+				}
+				
+				const year = document.getElementById('year').value;
+				const courseId = document.getElementById('courseId').value;
+				const subjectId = document.getElementById('subjectId').value;
+
+				const response = await fetch('https://www.wwwjavalearnapp.store/practice/toggle', {
+					method: 'POST',
+					headers: {
+						'Authorization': `Bearer ${token}`,
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({
+						username: student.username,
+						year: parseInt(year, 10),
+						courseId: parseInt(courseId, 10),
+						subjectId: parseInt(subjectId, 10),
+						allowed: !student.allowed,
+					}),
+				});
+
+				const result = await response.json();
+				if (result.success) {
+					const button = document.getElementById(`toggle-${student.username}`);
+					button.classList.toggle('enabled', result.allowed);
+					button.classList.toggle('disabled', !result.allowed);
+					button.textContent = result.allowed ? 'Дозволено' : 'Заборонено';
+					student.allowed = result.allowed;
+				} else {
+					alert('Помилка: ' + result.error);
+				}
+			} catch (error) {
+				alert('Сталася помилка при спробі змінити статус: ' + error.message);
+			}
+		}
+		
+        async function fetchStudentPermissions(year, courseId, subjectId, speciality) {
+			try {
+				const token = localStorage.getItem('token');
+				if (!token) {
+					alert('Токен не знайдено. Будь ласка, увійдіть у систему.');
+					return;
+				}
+
+				const response = await fetch(`https://www.wwwjavalearnapp.store/practice/getStudentPracticePermissions?year=${year}&courseId=${courseId}&subjectId=${subjectId}&speciality=${speciality}`, {
+					method: 'GET',
+					headers: {
+						'Authorization': `Bearer ${token}`,
+						'Content-Type': 'application/json',
+					}
+				});
+
+				const text = await response.text();
+				const result = JSON.parse(text);
+
+				if (result.success) {
+					const tbody = document.querySelector('tbody');
+					tbody.innerHTML = '';
+					result.permissions.forEach(student => {
+						const row = document.createElement('tr');
+
+						const nameCell = document.createElement('td');
+						nameCell.textContent = `${student.firstName} ${student.lastName}`;
+						row.appendChild(nameCell);
+
+						const buttonCell = document.createElement('td');
+						const button = document.createElement('button');
+						button.id = `toggle-${student.username}`;
+						button.classList.add('toggle-button', student.allowed ? 'enabled' : 'disabled');
+						button.textContent = student.allowed ? 'Дозволено' : 'Заборонено';
+						button.onclick = () => toggleSubmission(student);
+						buttonCell.appendChild(button);
+						row.appendChild(buttonCell);
+
+						tbody.appendChild(row);
+					});
+				} else {
+					alert('Помилка завантаження даних: ' + result.error);
+				}
+			} catch (error) {
+				alert('Сталася помилка при отриманні даних: ' + error.message);
+			}
+		}
+
+        function loadPermissions() {
+            const year = document.getElementById('year').value;
+            const courseId = document.getElementById('courseId').value;
+            const subjectId = document.getElementById('subjectId').value;
+            const speciality = document.getElementById('speciality').value;
+
+            if (year && courseId && subjectId && speciality) {
+                fetchStudentPermissions(year, courseId, subjectId, speciality);
+            } else {
+                alert('Будь ласка, заповніть всі поля!');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('loadButton').addEventListener('click', loadPermissions);
+        });
+    </script>
+</head>
+<body>
+    <h1>Управління відправками робіт студентів</h1>
+
+    <div class="filter-container">
+        <label for="year">Рік:</label>
+        <input type="number" id="year" placeholder="Рік">
+
+        <label for="courseId">Курс:</label>
+        <input type="number" id="courseId" placeholder="Курс">
+
+        <label for="subjectId">Дисципліна:</label>
+        <input type="number" id="subjectId" placeholder="Дисципліна">
+
+        <label for="speciality">Спеціальність:</label>
+        <input type="number" id="speciality" placeholder="Спеціальність">
+
+        <button id="loadButton">Завантажити дані</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Ім'я студента</th>
+                <th>Статус відправки</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Рядки будуть додані динамічно за допомогою JavaScript -->
+        </tbody>
+    </table>
+</body>
+</html>

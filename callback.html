@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Callback Page</title>
+</head>
+<body>
+    <h2>Callback Page</h2>
+
+    <script>
+        // Перевіряємо, чи є параметр "token" в URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token'); // Отримуємо токен з URL
+
+        if (token) {
+            // Зберігаємо токен в localStorage
+            localStorage.setItem('token', token);
+            
+            // Перенаправляємо на startpage.html
+            window.location.href = 'startpage.html';
+        } else {
+            alert('Token not found in the URL.');
+        }
+    </script>
+</body>
+</html>

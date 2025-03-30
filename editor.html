@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"> <!-- Add Font Awesome -->
+    <!-- Font Awesome для іконок -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- CodeMirror CSS та тема (Dracula) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.14/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.1/theme/monokai.css">
+    <!-- Підключення CodeMirror JS-бібліотек -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.14/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.14/mode/clike/clike.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.14/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.14/addon/edit/matchbrackets.min.js"></script>
+    <title>Code Editor</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+		.open-nav-btn {
+			font-size: 18px;
+			cursor: pointer;
+			color: black; /* Set the default color */
+			transition: color 0.3s ease; /* Smooth transition for the color change */
+		}
+
+		.open-nav-btn:hover {
+			color: #4CAF50; /* Color change on hover */
+		}
+
+		/* Sidebar Styles */
+		.sidenav {
+			height: 100%;
+			width: 0;
+			position: fixed;
+			z-index: 1;
+			top: 0;
+			left: 0;
+			background-color: #4CAF50; /* Green background */
+			overflow-x: hidden;
+			transition: 0.3s; /* Smooth transition */
+			padding-top: 60px;
+			box-shadow: 2px 0 5px rgba(0, 0, 0, 0.3); /* Add subtle shadow */
+			display: flex;
+			flex-direction: column; /* Align items vertically */
+		}
+
+		.sidenav select {
+			width: calc(100% - 40px); /* Full width minus padding */
+			margin: 10px 20px; /* Margin for spacing */
+			padding: 10px; /* Padding for better appearance */
+			font-size: 16px; /* Font size for readability */
+			border: none; /* Remove default border */
+			border-radius: 4px; /* Rounded corners */
+			background-color: #fff; /* White background */
+			color: #333; /* Dark text color */
+			transition: background-color 0.3s, border-color 0.3s; /* Smooth transition */
+		}
+
+		.sidenav select:hover {
+			background-color: #e0e0e0; /* Light grey background on hover */
+			border-color: #bbb; /* Subtle border color change */
+		}
+
+		.sidenav a {
+			padding: 15px 20px; /* Increase padding for better spacing */
+			text-decoration: none;
+			font-size: 18px; /* Adjust font size for readability */
+			color: #fff; /* White text color */
+			display: block;
+			transition: 0.3s;
+			border-bottom: 1px solid rgba(255, 255, 255, 0.3); /* Subtle bottom border for items */
+		}
+
+		.sidenav a:hover {
+			background-color: #45a049; /* Slightly darker green on hover */
+			color: #fff; /* Ensure text color stays white on hover */
+		}
+
+		.sidenav .closebtn {
+			position: absolute;
+			top: 10px; /* Adjusted for better vertical alignment */
+			right: 10px; /* Adjusted for better horizontal alignment */
+			font-size: 24px;
+			color: #fff; /* White color for the close button */
+			cursor: pointer; /* Change cursor to pointer */
+			transition: color 0.3s; /* Smooth color transition */
+		}
+
+		.sidenav .closebtn:hover {
+			color: #f1f1f1; /* Light color on hover */
+		}
+
+		/* Adjust the transition of the sidenav opening */
+		.sidenav.open {
+			width: 250px; /* Expanded width of the sidebar */
+		}
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        /* Task Description Container */
+		.task-description-container {
+			display: flex;
+			align-items: center;
+			width: 80%;
+			position: relative; /* For the arrow positioning */
+		}
+
+		/* Task Description Box */
+		.task-description {
+			width: 100%;
+			border: 1px solid #ccc;
+			border-radius: 5px;
+			padding: 10px;
+			transition: max-height 0.3s ease, padding 0.3s ease;
+			overflow: auto;
+		}
+
+		/* Collapsed Task Description */
+		.task-description.collapsed {
+			max-height: 0;
+			padding: 0;
+			margin-bottom: 40px;
+			border: none;
+		}
+
+		/* Arrow Positioning - Top Right */
+		.task-description-toggle {
+			position: absolute;
+			top: 10px; /* Adjust as needed for vertical spacing */
+			right: 10px; /* Adjust as needed for horizontal spacing */
+			cursor: pointer;
+			font-size: 24px;
+		}
+
+		/* Arrow Rotation */
+		.task-description-toggle-arrow {
+			transition: transform 0.3s ease;
+		}
+
+        .code-editor {
+            width: 80%;
+            height: 70%;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            overflow: auto;
+        }
+
+        .CodeMirror {
+            width: 80%;
+            height: 70%;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .result-container {
+            width: 80.4%;
+            display: flex;
+        }
+
+        .result {
+            width: 48%;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+        }
+        .button {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+
+		/* Style for the button when it is disabled */
+		#submitCodeButton:disabled {
+			background-color: grey;
+			cursor: not-allowed;
+			color: white; /* Optional: Change text color */
+		}
+
+
+        .navigation {
+            width: 80%;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .navigation a, .sign-out button {
+            margin: 0 15px;
+            text-decoration: none;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+			font-size: 16px; /* Set font size */
+        }
+        .navigation a:hover, .sign-out button:hover {
+            background-color: #45a049;
+        }
+        .sign-out {
+            align-self: flex-end;
+        }
+		.toast {
+			visibility: hidden; /* Hidden by default */
+			min-width: 250px; /* Minimum width of the toast */
+			margin-left: -125px; /* Center the toast */
+			background-color: #4CAF50; /* Background color */
+			color: #fff; /* Text color */
+			text-align: center; /* Center the text */
+			border-radius: 2px; /* Rounded corners */
+			position: fixed; /* Fixed position */
+			z-index: 1; /* Sit on top */
+			left: 80%; /* Positioned on the right side */
+			top: 30px; /* Distance from the bottom */
+			font-size: 17px; /* Font size */
+			padding: 16px; /* Padding */
+			box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.2); /* Shadow effect */
+		}
+
+		.toast.show {
+			visibility: visible; /* Show the toast */
+			-webkit-animation: fadeInOut 3s; /* Fade in and out */
+			animation: fadeInOut 3s;
+		}
+
+		@-webkit-keyframes fadeInOut {
+			0% { opacity: 0; }
+			20% { opacity: 1; }
+			80% { opacity: 1; }
+			100% { opacity: 0; }
+		}
+
+		@keyframes fadeInOut {
+			0% { opacity: 0; }
+			20% { opacity: 1; }
+			80% { opacity: 1; }
+			100% { opacity: 0; }
+		}
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+<div id="toast" class="toast"></div>
+
+<!-- Add this button to your main content area to open the sidenav -->
+<span class="open-nav-btn" style="font-size:18px;cursor:pointer" onclick="openNav()">&#9776; Open</span>
+
+<div id="mySidenav" class="sidenav">
+    <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+    <select id="courseList" onchange="fetchSubjects()">
+        <option value="">Select a course</option>
+        <option value="1">1 course</option>
+        <option value="2">2 course</option>
+        <option value="3">3 course</option>
+        <option value="4">4 course</option>
+    </select>
+    <select id="subjectList" onchange="fetchPractices(), fetchTasks(), getTask()">
+        <option value="">Select a subject</option>
+    </select>
+    <select id="practiceList" onchange="fetchTasks(), getTask()">
+        <option value="">Select a practice</option>
+    </select>
+    <select id="taskList" onchange="getTask()">
+        <option value="">Select a task</option>
+    </select>
+</div>
+
+<div class="container">
+    <div class="navigation">
+        <a href="startpage.html">Back to Home</a>
+        <a href="lecture.html">Lecture Materials</a>
+        <a href="results.html">My results</a>
+        <div class="sign-out">
+            <button class="button" onclick="signOut()">Sign Out</button>
+        </div>
+    </div>
+	<!-- Task Description with Toggle -->
+    <div class="task-description-container">
+        <div class="task-description" id="taskDescription">
+            <!-- Task description content will go here -->
+            Опис завдання...
+        </div>
+        <div class="task-description-toggle" onclick="toggleTaskDescription()">
+            <span id="arrow" class="task-description-toggle-arrow fas fa-caret-down"></span> <!-- Font Awesome caret icon -->
+        </div>
+    </div>
+    <textarea id="code" class="code-editor"></textarea>
+    <button id='submitCodeButton' class="button" onclick="check()">Submit Code</button>
+    <div class="result-container">
+        <div id="checkResult" class="result"></div>
+        <div id="codeResult" class="result"></div>
+    </div>
+</div>
+<script>
+	function openNav() {
+	  document.getElementById("mySidenav").style.width = "250px";
+	}
+
+	function closeNav() {
+	  document.getElementById("mySidenav").style.width = "0";
+	}
+
+    function toggleTaskDescription() {
+    var taskDescription = document.getElementById('taskDescription');
+    var arrow = document.getElementById('arrow');
+    if (taskDescription.classList.contains('collapsed')) {
+        taskDescription.classList.remove('collapsed');
+        arrow.classList.remove('fa-caret-up');
+        arrow.classList.add('fa-caret-down');
+    } else {
+        taskDescription.classList.add('collapsed');
+        arrow.classList.remove('fa-caret-down');
+        arrow.classList.add('fa-caret-up');
+    }
+}
+</script>
+<script>
+    var token = localStorage.getItem('token'); // Replace this with your actual bearer token
+
+    function signOut() {
+        localStorage.removeItem('token'); // Remove token from localStorage
+        window.location.href = 'signIn.html'; // Redirect to sign-in page after signing out
+    }
+
+	function getYearOfCourse() {
+		return new Promise((resolve, reject) => {
+			var courseId = document.getElementById('courseList').value;
+
+			var xhr = new XMLHttpRequest();
+			var url = "https://www.wwwjavalearnapp.store/getYearOfCourse?courseId=" + courseId;
+			xhr.open("GET", url, true);
+			xhr.setRequestHeader("Authorization", "Bearer " + token);
+			xhr.onreadystatechange = function () {
+				if (xhr.readyState === 4) {
+					if (xhr.status === 200) {
+						var response = JSON.parse(xhr.responseText);
+						if (response.success) {
+							localStorage.setItem('year', response.year);
+							resolve(); // Resolve the promise
+						} else {
+							reject('Error in response: ' + response.error);
+						}
+					} else {
+						reject('Error fetching course year: ' + xhr.status);
+					}
+				}
+			};
+			xhr.send();
+		});
+	}
+
+    function fetchSubjects() {
+        return new Promise((resolve, reject) => {
+            var courseId = document.getElementById('courseList').value;
+
+			getYearOfCourse().then(() => {
+				var year = localStorage.getItem('year');
+				if (!year) return;
+				var xhr = new XMLHttpRequest();
+				var url = "https://www.wwwjavalearnapp.store/subject/list?year=" + year + "&courseId=" + courseId;
+				xhr.open("GET", url, true);
+				xhr.setRequestHeader("Authorization", "Bearer " + token);
+				xhr.onreadystatechange = function () {
+					if (xhr.readyState === 4) {
+						if (xhr.status === 200) {
+							var response = JSON.parse(xhr.responseText);
+							if (response.success) {
+								populateSubjectList(response.subjects);
+								resolve(); // Resolve the promise when subjects are populated
+							} else {
+								console.error('Error in response:', response.error);
+								reject(); // Reject the promise on error
+							}
+						} else {
+							console.error('Error fetching subject list:', xhr.status);
+							reject(); // Reject the promise on error
+						}
+					}
+				};
+				xhr.send();
+			});
+        });
+    }
+
+    function populateSubjectList(subjects) {
+        var subjectList = document.getElementById('subjectList');
+        subjectList.innerHTML = '<option value="">Select a subject</option>'; // Reset dropdown
+
+        if (subjects && typeof subjects === 'object') {
+            Object.entries(subjects).forEach(function([id, name]) {
+                var option = document.createElement('option');
+                option.value = id;
+                option.textContent = name;
+                subjectList.appendChild(option);
+            });
+        } else {
+            console.error('Subjects data is not in the expected format:', subjects);
+        }
+    }
+
+    function fetchPractices() {
+        return new Promise((resolve, reject) => {
+			var year = localStorage.getItem('year');
+            var courseId = document.getElementById('courseList').value;
+            var subjectId = document.getElementById('subjectList').value;
+
+			if (!year) return resolve();
+			if (!courseId) return resolve();
+            if (!subjectId) return resolve(); // If no subjectId, resolve immediately
+
+            var xhr = new XMLHttpRequest();
+
+            var url = 'https://www.wwwjavalearnapp.store/listPractices?year=' + year + '&courseId=' + courseId + '&subjectId=' + subjectId;
+
+            xhr.open("GET", url, true);
+            xhr.setRequestHeader("Authorization", "Bearer " + token);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response.success) {
+                            populatePracticeList(response.practiceCount);
+                            resolve(); // Resolve the promise when practices are populated
+                        } else {
+                            populatePracticeList(0);
+                            console.error('Error in response:', response.error);
+                            reject(); // Reject the promise on error
+                        }
+                    } else {
+                        populatePracticeList(0);
+                        populateTaskList(0);
+                        console.error('Error fetching practice list:', xhr.status);
+                        reject(); // Reject the promise on error
+                    }
+                }
+            };
+            xhr.send();
+        });
+    }
+
+    function populatePracticeList(practiceCount) {
+        var practiceList = document.getElementById('practiceList');
+        practiceList.innerHTML = '<option value="">Select a practice</option>'; // Reset dropdown
+
+        // Generate list items based on practiceCount
+        for (var i = 1; i <= practiceCount; i++) {
+            var option = document.createElement('option');
+                option.value = i;
+                option.textContent = "Практика " + i;
+                practiceList.appendChild(option);
+        }
+    }
+
+    function fetchTasks() {
+        return new Promise((resolve, reject) => {
+			var year = localStorage.getItem('year');
+            var courseId = document.getElementById('courseList').value;
+            var subjectId = document.getElementById('subjectList').value;
+            var practiceId = document.getElementById('practiceList').value;
+
+			if (!year) return resolve();
+			if (!courseId) return resolve();
+            if (!subjectId) return resolve();
+            if (!practiceId) return resolve();
+
+            var xhr = new XMLHttpRequest();
+            var url = 'https://www.wwwjavalearnapp.store/listTasks?year=' + year + '&courseId=' + courseId + '&subjectId=' + subjectId + '&practiceId=' + practiceId; // Update with your endpoint
+
+            xhr.open("GET", url, true);
+            xhr.setRequestHeader("Authorization", "Bearer " + token);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response.success) {
+                            populateTaskList(response.taskCount); // Extract practices from the response
+                            resolve();
+                        } else {
+						    populateTaskList(0);
+                            console.error('Error in response:', response.error);
+                            reject();
+                        }
+                    } else {
+                        populateTaskList(0);
+                        console.error('Error fetching practice list:', xhr.status);
+                        reject();
+                    }
+                }
+            };
+            xhr.send();
+        });
+    }
+
+    function populateTaskList(taskCount) {
+        var taskList = document.getElementById('taskList');
+        taskList.innerHTML = '<option value="">Select a task</option>'; // Reset dropdown
+
+        // Generate list items based on practiceCount
+        for (var i = 1; i <= taskCount; i++) {
+            var option = document.createElement('option');
+                option.value = i;
+                option.textContent = "Завдання " + i;
+                taskList.appendChild(option);
+        }
+    }
+
+    var codeEditor = CodeMirror.fromTextArea(document.getElementById("code"), {
+        mode: "text/x-java",
+        lineNumbers: true,
+        matchBrackets: true,
+        autoCloseBrackets: true,
+        styleActiveLine: true,
+        indentUnit: 4,
+        theme: "monokai"
+    });
+
+    // Додаємо стилі до редактора
+    codeEditor.getWrapperElement().style.width = "80%";
+    codeEditor.getWrapperElement().style.height = "70%";
+    codeEditor.getWrapperElement().style.border = "1px solid #ccc";
+    codeEditor.getWrapperElement().style.borderRadius = "5px";
+
+    function getTask() {
+        var year = localStorage.getItem('year');
+        var courseId = document.getElementById('courseList').value;
+        var subjectId = document.getElementById('subjectList').value;
+        var practiceId = document.getElementById('practiceList').value;
+		var taskId = document.getElementById('taskList').value;
+
+		if (!year) return;
+		if (!courseId) return;
+        if (!subjectId) return;
+        if (!practiceId) return;
+        if (!taskId) return;
+
+        codeEditor.setValue("// Enter your code here");
+
+		var checkResultDocument = document.getElementById('checkResult');
+		checkResultDocument.innerHTML = "";
+
+        var xhr = new XMLHttpRequest();
+        var url = 'https://www.wwwjavalearnapp.store/getTask?year=' + year + '&courseId=' + courseId + '&subjectId=' + subjectId + '&practiceId=' + practiceId + '&taskId=' + taskId;
+		
+        xhr.open("GET", url, true);
+        xhr.setRequestHeader("Authorization", "Bearer " + token); // Add bearer token
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    var response = JSON.parse(xhr.responseText);
+                    var taskDescription = response.taskText;
+                    var taskDescriptionDocument = document.getElementById('taskDescription');
+                    taskDescriptionDocument.innerHTML = convertMarkdownToHTML(taskDescription);
+
+                    var checkResult = document.getElementById("checkResult");
+                    checkResult.innerHTML = "";
+
+                    var codeResult = document.getElementById("codeResult");
+                    codeResult.innerHTML = "";
+
+					var code = response.code;
+
+					if (!code) return;
+
+					codeEditor.setValue(code);
+                } else {
+                    var errorResultDocument = document.getElementById('codeResult');
+                    errorResultDocument.innerText = "Error: " + xhr.status;
+                }
+            }
+        };
+        xhr.send();
+    }
+
+    function check() {
+	    var year = localStorage.getItem('year');
+		var courseId = document.getElementById('courseList').value;
+        var subjectId = document.getElementById('subjectList').value;
+        var practiceId = document.getElementById('practiceList').value;
+        var taskId = document.getElementById('taskList').value;
+
+        var code = codeEditor.getValue();
+
+		var submitCodeButton = document.getElementById('submitCodeButton');
+		submitCodeButton.disabled = true;
+		submitCodeButton.innerText='Submitting...';
+
+        // Execute request for second URL (https://www.wwwjavalearnapp.store/check)
+        var xhrCheckCode = new XMLHttpRequest();
+        var urlCheckCode = "https://www.wwwjavalearnapp.store/check";
+        xhrCheckCode.open("POST", urlCheckCode, true);
+        xhrCheckCode.setRequestHeader("Content-Type", "application/json");
+        xhrCheckCode.setRequestHeader("Authorization", "Bearer " + token);
+        xhrCheckCode.onreadystatechange = function () {
+            if (xhrCheckCode.readyState === 4) {
+
+				submitCodeButton.disabled = false;
+				submitCodeButton.innerText = 'Submit Code';
+
+                if (xhrCheckCode.status === 200) {
+                    var response = JSON.parse(xhrCheckCode.responseText);
+                    var successResult = response.successResult;
+                    var failedResult = response.failedResult;
+                    var checkResultDocument = document.getElementById('checkResult');
+
+					if(response.taskPassed) {
+						showToast("Task passed successfully! Mark is: " + response.mark);
+					}
+
+                    var successListHTML = "<p>Success Results:</p><ul>";
+                    successResult.forEach(function(result) {
+                        successListHTML += "<li>" + result + "</li>";
+                    });
+                    successListHTML += "</ul>";
+                    var failedListHTML = "<p>Failed Results:</p><ul>";
+                    failedResult.forEach(function(result) {
+                        failedListHTML += "<li>" + result + "</li>";
+                    });
+                    failedListHTML += "</ul>";
+                    checkResultDocument.innerHTML = successListHTML + failedListHTML;
+
+                    var codeResult = response.codeResult;
+                    var errorResult = response.errorResult;
+
+                    var codeResultDocument = document.getElementById('codeResult');
+                    codeResultDocument.innerText = codeResult != null ? codeResult : errorResult;
+                } else {
+                    var errorResultDocument = document.getElementById('codeResult');
+                    errorResultDocument.innerText = "Error: " + xhrCheckCode.status;
+                }
+            }
+        };
+        xhrCheckCode.send(JSON.stringify({"year": year, "courseId": courseId, "subjectId": subjectId, "practiceId": practiceId, "taskId": taskId, "code": code }));
+    }
+
+	function showToast(message) {
+		var toast = document.getElementById('toast');
+		toast.textContent = message;
+		toast.className = "toast show";
+
+		setTimeout(function() {
+			toast.className = toast.className.replace("show", "");
+		}, 3000); // Hide the toast after 3 seconds
+	}
+
+    function convertMarkdownToHTML(markdownText) {
+        return marked.parse(markdownText);
+    }
+
+    window.onload = function() {
+        codeEditor.setValue("// Enter your code here");
+
+		var savedCourseId = localStorage.getItem('courseId');
+
+		if (savedCourseId) {
+			var courseList = document.getElementById('courseList');
+			courseList.value = savedCourseId;
+		}
+
+        // Fetch and populate subjects
+        fetchSubjects().then(() => {
+
+            // Set saved subject ID after subjects are populated
+            var savedSubjectId = localStorage.getItem('subjectId');
+
+            if (savedSubjectId) {
+				var subjectList = document.getElementById('subjectList');
+                subjectList.value = savedSubjectId;
+            }
+
+            // Fetch and populate practices based on the selected subject ID
+            fetchPractices().then(() => {
+                // Set saved lecture ID after practices are populated
+                var savedLectureId = localStorage.getItem('lectureId');
+
+                if (savedLectureId) {
+					var practiceList = document.getElementById('practiceList');
+                    practiceList.value = savedLectureId;
+                }
+
+                // Fetch tasks based on the selected subject ID and practice ID
+                fetchTasks().then(() => {
+					if (savedLectureId) {
+						var taskList = document.getElementById('taskList');
+						taskList.value = 1;
+					}
+
+                    getTask();
+                });
+            });
+        });
+    };
+</script>
+
+</body>
+</html>

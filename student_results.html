@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Task Results</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Student Task Results</h2>
+
+    <div>
+        <label for="year">Year:</label>
+        <input type="number" id="year" name="year">
+        <label for="courseId">Course ID:</label>
+        <input type="number" id="courseId" name="courseId">
+        <label for="subjectId">Subject ID:</label>
+        <input type="number" id="subjectId" name="subjectId">
+        <label for="speciality">Speciality:</label>
+        <input type="number" id="speciality" name="speciality">
+        <button onclick="fetchStudentResults()">Get Results</button>
+    </div>
+
+    <table id="resultsTable">
+        <thead>
+            <tr id="practiceRow">
+                <th>Student Name</th>
+                <!-- Practice IDs will be inserted dynamically -->
+            </tr>
+            <tr id="taskRow">
+                <th></th>
+                <!-- Task IDs will be inserted dynamically -->
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Student results will be dynamically populated here -->
+        </tbody>
+    </table>
+
+    <script>
+    async function fetchStudentResults() {
+        const year = document.getElementById("year").value;
+        const courseId = document.getElementById("courseId").value;
+        const subjectId = document.getElementById("subjectId").value;
+        const speciality = document.getElementById("speciality").value;
+
+        const token = localStorage.getItem("token");
+
+        try {
+            const response = await fetch(`https://www.wwwjavalearnapp.store/getStudentTaskResultsBySpeciality?year=${year}&courseId=${courseId}&subjectId=${subjectId}&speciality=${speciality}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                populateTable(data.studentPractices);
+            } else {
+                alert("Error: " + (data.error || "Unknown error occurred."));
+            }
+        } catch (error) {
+            console.error("Error fetching student task results:", error);
+        }
+    }
+
+    function populateTable(studentPractices) {
+        const practiceRow = document.getElementById("practiceRow");
+        const taskRow = document.getElementById("taskRow");
+        const tableBody = document.getElementById("resultsTable").getElementsByTagName("tbody")[0];
+
+        practiceRow.innerHTML = "<th>Student Name</th>"; // Clear previous data
+        taskRow.innerHTML = "<th></th>";                // Clear previous data
+        tableBody.innerHTML = "";                       // Clear previous data
+
+        const allPracticeTaskMap = {}; // Object to store practices and tasks
+
+        // Iterate through all students and accumulate all practices and tasks
+        studentPractices.forEach(student => {
+            student.practiceIdTaskResults.forEach(practice => {
+                const practiceId = practice.practiceId;
+                const taskIdMarks = practice.taskIdMarks;
+
+                // Store the task IDs for each practice ID
+                if (!allPracticeTaskMap[practiceId]) {
+                    allPracticeTaskMap[practiceId] = taskIdMarks.map(task => task.taskId);
+                }
+            });
+        });
+
+        // Populate the practice ID row and task ID row
+        Object.keys(allPracticeTaskMap).forEach(practiceId => {
+            const tasks = allPracticeTaskMap[practiceId];
+
+            // For each practice ID, insert a cell in the first row
+            tasks.forEach(() => {
+                practiceRow.insertCell().innerText = `Practice ${practiceId}`;
+            });
+
+            // Insert corresponding task IDs in the second row
+            tasks.forEach(taskId => {
+                taskRow.insertCell().innerText = `Task ${taskId}`;
+            });
+        });
+
+        // Add Average Mark column header
+        practiceRow.insertCell().innerText = "Average Mark";
+        taskRow.insertCell(); // Empty cell under Average Mark
+
+        // Populate student rows with marks
+        studentPractices.forEach(student => {
+            const row = tableBody.insertRow();
+            row.insertCell(0).innerText = student.studentDetails; // First column is student name
+
+            // Iterate through all practices and tasks
+            Object.keys(allPracticeTaskMap).forEach(practiceId => {
+                const practiceResults = student.practiceIdTaskResults.find(p => p.practiceId == practiceId);
+
+                allPracticeTaskMap[practiceId].forEach(taskId => {
+                    // Check if the practice and task exist for this student
+                    const taskMark = practiceResults
+                        ? practiceResults.taskIdMarks.find(task => task.taskId == taskId)
+                        : null;
+                    const mark = taskMark ? taskMark.mark : "-";
+                    row.insertCell().innerText = mark; // Add the mark (or dash if missing)
+                });
+            });
+
+            // Insert average mark
+            row.insertCell().innerText = student.averageMark;
+        });
+    }
+</script>
+
+</body>
+</html>

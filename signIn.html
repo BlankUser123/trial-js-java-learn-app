@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            width: 300px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="text"], input[type="password"] {
+            width: calc(100% - 12px);
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+        .error-message {
+            color: red;
+            display: none;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Sign In</h2>
+    <form id="signInForm" onsubmit="signIn(event)">
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="text" id="email" name="email" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <input type="submit" value="Sign In">
+    </form>
+    <p id="errorMessage" class="error-message"></p>
+	
+	<!-- Add the Forgot Password Link -->
+    <div class="forgot-password">
+        <p><a href="forgot_password.html">Forgot Password?</a></p>
+    </div>
+	
+	<div class="signup-link">
+        <p>Don't have an account? <a href="signup.html">Sign Up</a></p>
+    </div>
+</div>
+
+<script>
+    function signIn(event) {
+        event.preventDefault();
+
+        var email = document.getElementById('email').value;
+        var password = document.getElementById('password').value;
+
+        var xhr = new XMLHttpRequest();
+        var url = "https://www.wwwjavalearnapp.store/auth/signIn"; // Replace with your actual backend endpoint
+        xhr.open("POST", url, true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    var response = JSON.parse(xhr.responseText);
+					if (response.success) {
+						var token = response.token;
+					
+						localStorage.setItem('token', token); // Store token in localStorage
+						window.location.href = 'startpage.html'; // Redirect to startpage.html after successful sign-in
+					} else {
+						var errorMessage = document.getElementById('errorMessage');
+						errorMessage.style.display = 'block';
+						errorMessage.textContent = response.error;
+                    }
+                } else {
+                    var errorMessage = document.getElementById('errorMessage');
+                    errorMessage.style.display = 'block';
+                    errorMessage.textContent = "Error: " + xhr.status;
+                }
+            }
+        };
+
+        var data = JSON.stringify({ "email": email, "password": password });
+        xhr.send(data);
+    }
+</script>
+
+</body>
+</html>

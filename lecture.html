@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lecture Materials</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }.open-nav-btn {
+			font-size: 18px;
+			cursor: pointer;
+			color: black; /* Set the default color */
+			transition: color 0.3s ease; /* Smooth transition for the color change */
+		}
+
+		.open-nav-btn:hover {
+			color: #4CAF50; /* Color change on hover */
+		}
+				
+		/* Sidebar Styles */
+		.sidenav {
+			height: 100%;
+			width: 0;
+			position: fixed;
+			z-index: 1;
+			top: 0;
+			left: 0;
+			background-color: #4CAF50; /* Green background */
+			overflow-x: hidden;
+			transition: 0.3s; /* Smooth transition */
+			padding-top: 60px;
+			box-shadow: 2px 0 5px rgba(0, 0, 0, 0.3); /* Add subtle shadow */
+			display: flex;
+			flex-direction: column; /* Align items vertically */
+		}
+
+		.sidenav select {
+			width: calc(100% - 40px); /* Full width minus padding */
+			margin: 10px 20px; /* Margin for spacing */
+			padding: 10px; /* Padding for better appearance */
+			font-size: 16px; /* Font size for readability */
+			border: none; /* Remove default border */
+			border-radius: 4px; /* Rounded corners */
+			background-color: #fff; /* White background */
+			color: #333; /* Dark text color */
+			transition: background-color 0.3s, border-color 0.3s; /* Smooth transition */
+		}
+
+		.sidenav select:hover {
+			background-color: #e0e0e0; /* Light grey background on hover */
+			border-color: #bbb; /* Subtle border color change */
+		}
+
+		.sidenav a {
+			padding: 15px 20px; /* Increase padding for better spacing */
+			text-decoration: none;
+			font-size: 18px; /* Adjust font size for readability */
+			color: #fff; /* White text color */
+			display: block;
+			transition: 0.3s;
+			border-bottom: 1px solid rgba(255, 255, 255, 0.3); /* Subtle bottom border for items */
+		}
+
+		.sidenav a:hover {
+			background-color: #45a049; /* Slightly darker green on hover */
+			color: #fff; /* Ensure text color stays white on hover */
+		}
+
+		.sidenav .closebtn {
+			position: absolute;
+			top: 10px; /* Adjusted for better vertical alignment */
+			right: 10px; /* Adjusted for better horizontal alignment */
+			font-size: 24px;
+			color: #fff; /* White color for the close button */
+			cursor: pointer; /* Change cursor to pointer */
+			transition: color 0.3s; /* Smooth color transition */
+		}
+
+		.sidenav .closebtn:hover {
+			color: #f1f1f1; /* Light color on hover */
+		}
+
+		/* Adjust the transition of the sidenav opening */
+		.sidenav.open {
+			width: 250px; /* Expanded width of the sidebar */
+		}
+        .container {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			height: 100%;
+			position: relative;
+			padding: 0px; /* Add padding to prevent content from touching the edges */
+		}
+        .navigation {
+            width: 80%;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .navigation a, .sign-out button {
+            margin: 0 15px;
+            text-decoration: none;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .navigation a:hover, .sign-out button:hover {
+            background-color: #45a049;
+        }
+        .lecture-content {
+		width: 80%;
+		flex-grow: 1; /* This will make the lecture content take up all available vertical space */
+		border: 1px solid #ccc;
+		border-radius: 5px;
+		padding: 20px;
+		overflow-y: auto; /* Vertical scrolling */
+		background-color: #f9f9f9;
+		margin-top: 20px;
+	}
+        .sign-out {
+            align-self: flex-end;
+        }
+		@media (max-width: 768px) {
+            .lecture-content {
+                width: 90%;
+                max-height: 60vh;
+            }
+            .dropdown-container {
+                top: 10px;
+                left: 10px;
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Include highlight.js for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+</head>
+<body>
+<!-- Add this button to your main content area to open the sidenav -->
+<span class="open-nav-btn" style="font-size:18px;cursor:pointer" onclick="openNav()">&#9776; Open</span>
+
+<div id="mySidenav" class="sidenav">
+    <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+    <select id="courseList" onchange="fetchSubjects()">
+            <option value="">Select a course</option>
+            <option value="1">1 course</option>
+            <option value="2">2 course</option>
+            <option value="3">3 course</option>
+            <option value="4">4 course</option>
+        </select>
+		<select id="subjectList" onchange="fetchLectures()">
+            <option value="">Select a subject</option>
+        </select>
+        <select id="lectureList" onchange="fetchAndDisplayLecture()">
+            <option value="">Select a lecture</option>
+        </select>
+</div>
+
+<div class="container">
+    <div class="navigation">
+        <a href="startpage.html">Back to Home</a>
+        <a href="editor.html">Code Editor</a>
+        <div class="sign-out">
+            <button class="button" onclick="signOut()">Sign Out</button>
+        </div>
+    </div>
+    <div id="lectureContent" class="lecture-content"></div>
+</div>
+<script>
+	function openNav() {
+	  document.getElementById("mySidenav").style.width = "250px";
+	}
+
+	function closeNav() {
+	  document.getElementById("mySidenav").style.width = "0";
+	}
+</script>
+<script>
+    // Initialize highlight.js after page load
+    document.addEventListener('DOMContentLoaded', (event) => {
+        hljs.highlightAll(); // Highlight all code blocks on the page
+    });
+</script>
+<script>
+    var token = localStorage.getItem('token'); // Replace this with your actual bearer token
+
+    function signOut() {
+        localStorage.removeItem('token'); // Remove token from localStorage
+        window.location.href = 'signIn.html'; // Redirect to sign-in page after signing out
+    }
+	
+	function getYearOfCourse() {
+		return new Promise((resolve, reject) => {
+			var courseId = document.getElementById('courseList').value;
+
+			var xhr = new XMLHttpRequest();
+			var url = "https://www.wwwjavalearnapp.store/getYearOfCourse?courseId=" + courseId;
+			xhr.open("GET", url, true);
+			xhr.setRequestHeader("Authorization", "Bearer " + token);
+			xhr.onreadystatechange = function () {
+				if (xhr.readyState === 4) {
+					if (xhr.status === 200) {
+						var response = JSON.parse(xhr.responseText);
+						if (response.success) {
+							localStorage.setItem('year', response.year);
+							resolve(); // Resolve the promise
+						} else {
+							reject('Error in response: ' + response.error);
+						}
+					} else {
+						reject('Error fetching course year: ' + xhr.status);
+					}
+				}
+			};
+			xhr.send();
+		});
+	}
+
+    function fetchSubjects() {
+		var courseId = document.getElementById('courseList').value;
+		if(!courseId) return;
+		
+		getYearOfCourse().then(() => {
+			var year = localStorage.getItem('year');
+			if (!year) return;
+		
+			var xhr = new XMLHttpRequest();
+			var url = "https://www.wwwjavalearnapp.store/subject/list?year=" + year + "&courseId=" + courseId; // Update with your endpoint
+			xhr.open("GET", url, true);
+			xhr.setRequestHeader("Authorization", "Bearer " + token);
+			xhr.onreadystatechange = function () {
+				if (xhr.readyState === 4) {
+					if (xhr.status === 200) {
+						var response = JSON.parse(xhr.responseText);
+						if (response.success) {
+							populateSubjectList(response.subjects); // Extract subjects from the response
+						} else {
+							console.error('Error in response:', response.error);
+						}
+					} else {
+						populateSubjectList(0);
+						populateLectureList(0);
+						console.error('Error fetching subject list:', xhr.status);
+					}
+				}
+			};
+			xhr.send();
+		});
+    }
+
+    function populateSubjectList(subjects) {
+        var subjectList = document.getElementById('subjectList');
+        subjectList.innerHTML = '<option value="">Select a subject</option>'; // Reset dropdown
+
+        if (subjects && typeof subjects === 'object') {
+            Object.entries(subjects).forEach(function([id, name]) {
+                var option = document.createElement('option');
+                option.value = id;
+                option.textContent = name;
+                subjectList.appendChild(option);
+            });
+        } else {
+            console.error('Subjects data is not in the expected format:', subjects);
+        }
+    }
+
+    function fetchLectures() {
+		var year = localStorage.getItem('year');
+		var courseId = document.getElementById('courseList').value;
+        var subjectId = document.getElementById('subjectList').value;
+		
+		if (!year) return;		
+		if (!courseId) return;
+		if (!subjectId) return;
+		
+        var xhr = new XMLHttpRequest();
+        var url = "https://www.wwwjavalearnapp.store/lecture/list?year=" + year + "&courseId=" + courseId + "&subjectId=" + subjectId; // Adjust endpoint to include subjectId
+
+		xhr.open("GET", url, true);
+		xhr.setRequestHeader("Authorization", "Bearer " + token);
+		xhr.onreadystatechange = function () {
+			if (xhr.readyState === 4) {
+				if (xhr.status === 200) {
+					var response = JSON.parse(xhr.responseText);
+					if (response.success) {
+						populateLectureList(response.lectureCount); // Extract lectures from the response
+					} else {
+						console.error('Error in response:', response.error);
+					}
+				} else {
+					populateLectureList(0);
+					console.error('Error fetching lecture list:', xhr.status);
+				}
+			}
+		};
+		xhr.send();
+    }
+
+    function populateLectureList(lectureCount) {
+        var lectureList = document.getElementById('lectureList');
+        lectureList.innerHTML = '<option value="">Select a lecture</option>'; // Reset dropdown
+
+        for (var i = 1; i <= lectureCount; i++) {
+            var option = document.createElement('option');
+                option.value = i;
+                option.textContent = "Лекція " + i;
+                lectureList.appendChild(option);
+        }
+    }
+
+    function fetchAndDisplayLecture() {
+		var year = localStorage.getItem('year');
+		var courseId = document.getElementById('courseList').value;
+        var subjectId = document.getElementById('subjectList').value;
+        var lectureId = document.getElementById('lectureList').value;
+		
+		if (!year) return;
+		if (!courseId) return;
+		if (!subjectId) return;
+		if (!lectureId) return;
+
+        if (lectureId) {
+            var xhr = new XMLHttpRequest();
+            var url = "https://www.wwwjavalearnapp.store/lecture/getLecture?year=" + year + "&courseId=" + courseId + "&subjectId=" + subjectId + "&lectureId=" + lectureId;
+
+            xhr.open("GET", url, true);
+            xhr.setRequestHeader("Authorization", "Bearer " + token);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        var response = JSON.parse(xhr.responseText);
+                        if (response.success) {
+                            var lectureContent = response.lecture;
+                            var lectureContentDocument = document.getElementById('lectureContent');
+                            lectureContentDocument.innerHTML = convertMarkdownToHTML(lectureContent);
+
+							// Apply syntax highlighting
+							hljs.highlightAll();
+
+							localStorage.setItem('courseId', courseId);
+                            localStorage.setItem('subjectId', subjectId);
+                            localStorage.setItem('lectureId', lectureId);
+                        } else {
+                            console.error('Error in response:', response.error);
+                            var lectureContentDocument = document.getElementById('lectureContent');
+                            lectureContentDocument.innerText = "Error: " + response.error;
+                        }
+                    } else {
+                        console.error('Error fetching lecture content:', xhr.status);
+                        var lectureContentDocument = document.getElementById('lectureContent');
+                        lectureContentDocument.innerText = "Error: " + xhr.status;
+                    }
+                }
+            };
+            xhr.send();
+        }
+    }
+
+    function convertMarkdownToHTML(markdownText) {
+        return marked.parse(markdownText);
+    }
+
+    window.onload = function() {
+        fetchSubjects();
+    };
+</script>
+</body>
+</html>

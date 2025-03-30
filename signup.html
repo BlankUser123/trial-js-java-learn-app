@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 300px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            background-color: #fff;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="text"], input[type="email"], input[type="password"], select {
+            width: calc(100% - 12px);
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+        .error-message {
+            color: red;
+            display: none;
+            margin-top: 10px;
+        }
+        .signin-link {
+            margin-top: 10px;
+            text-align: center;
+        }
+        .signin-link a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        .signin-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>Sign Up</h2>
+    <form id="authorizationForm" onsubmit="event.preventDefault(); redirectToUser();">
+        <div class="form-group">
+            <label for="firstName">First Name</label>
+            <input type="text" id="firstName" name="firstName" required>
+        </div>
+        <div class="form-group">
+            <label for="patronymic">Patronymic</label>
+            <input type="text" id="patronymic" name="patronymic" required>
+        </div>
+        <div class="form-group">
+            <label for="lastName">Last Name</label>
+            <input type="text" id="lastName" name="lastName" required>
+        </div>
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+		<div class="form-group">
+			<label for="courseNumber">Course Number</label>
+			<select id="courseNumber" name="courseNumber" required>
+				<option value="1">1</option>
+				<option value="2">2</option>
+				<option value="3">3</option>
+				<option value="4">4</option>
+			</select>
+		</div>
+		<div class="form-group">
+			<label for="speciality">Speciality</label>
+			<select id="speciality" name="speciality" required>
+				<option value="121">121</option>
+				<option value="122">122</option>
+				<option value="123">123</option>
+				<option value="125">125</option>
+				<option value="172">172</option>
+				<option value="014">014</option>
+			</select>
+		</div>
+
+        <input type="submit" value="Authorize and Redirect">
+    </form>
+    
+    <!-- Кнопка для Google входу -->
+    <a href="javascript:void(0);" onclick="signInWithGoogle();">
+        <button>Sign in with Google</button>
+    </a>
+
+    <div class="signin-link">
+        <p>Already have an account? <a href="signIn.html">Sign In</a></p>
+    </div>
+
+	<p id="errorMessage" class="error-message"></p>
+</div>
+
+<script>
+    function redirectToUser() {
+        var firstName = document.getElementById("firstName").value;
+        var patronymic = document.getElementById("patronymic").value;
+        var lastName = document.getElementById("lastName").value;
+        var email = document.getElementById("email").value;
+        var password = document.getElementById("password").value;
+		var courseNumber = document.getElementById("courseNumber").value;
+		var speciality = document.getElementById("speciality").value;
+
+        // Construct the request body
+        var requestBody = {
+            firstName: firstName,
+			patronymic: patronymic,
+            lastName: lastName,
+            email: email,
+            password: password,
+			courseNumber: parseInt(courseNumber),
+			speciality: parseInt(speciality)
+        };
+        // Send the request to obtain Bearer token
+        fetch('https://www.wwwjavalearnapp.store/auth/signup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.json(); // Parse the response body as JSON
+            } else {
+                throw new Error('Failed to fetch Bearer token');
+            }
+        })
+        .then(data => {
+			if (!data.success) {
+				var errorMessage = document.getElementById('errorMessage');
+				errorMessage.style.display = 'block';
+				errorMessage.textContent = "Error: " + data.error;
+				return;
+			}
+		
+            if (data.token) {
+                // Save the token in localStorage
+                localStorage.setItem('token', data.token);
+
+                // Redirect to startpage.html
+                window.location.href = 'signIn.html';
+				
+				return;
+            }
+			
+			throw new Error('Token not found in response');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert("Failed to fetch Bearer token. Please try again.");
+        });
+    }
+
+    // Функція для перенаправлення на Google для авторизації
+    function signInWithGoogle() {
+        const clientId = '432937037787-jdvsqlciso6lo1f2p1vfk9028r4hsgn7.apps.googleusercontent.com'; // Ваш client ID
+        const redirectUri = 'https://www.wwwjavalearnapp.store/auth/callback'; // URL редиректу
+        const scope = 'email profile openid'; // Потрібні скоупи
+
+        const googleAuthUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;
+        
+        window.location.href = googleAuthUrl; // Перенаправляємо користувача на Google
+    }
+</script>
+
+</body>
+</html>
